@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { MathProblem as MathProblemType, Difficulty, Operation, checkAnswer } from '@/utils/mathUtils';
 import Button from './Button';
@@ -36,6 +35,17 @@ const MathProblem: React.FC<MathProblemProps> = ({
     }
   }, [problem]);
 
+  // Effect to automatically move to next problem if answer is correct
+  useEffect(() => {
+    if (answered && isCorrect) {
+      const timer = setTimeout(() => {
+        onNextProblem();
+      }, 800); // Short delay before moving to next problem
+      
+      return () => clearTimeout(timer);
+    }
+  }, [answered, isCorrect, onNextProblem]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -48,6 +58,17 @@ const MathProblem: React.FC<MathProblemProps> = ({
     setIsCorrect(isAnswerCorrect);
     setAnswered(true);
     onAnswer(isAnswerCorrect, elapsedTime);
+    
+    // If answer is incorrect, clear the input and keep focus
+    if (!isAnswerCorrect) {
+      setUserAnswer('');
+      setTimeout(() => {
+        setAnswered(false);
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 1500); // Short delay to show feedback before allowing retry
+    }
   };
 
   const handleNext = () => {
@@ -56,7 +77,7 @@ const MathProblem: React.FC<MathProblemProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // When Enter is pressed and the problem is already answered, go to next problem
-    if (e.key === 'Enter' && answered) {
+    if (e.key === 'Enter' && answered && isCorrect) {
       e.preventDefault();
       handleNext();
     }
@@ -86,7 +107,7 @@ const MathProblem: React.FC<MathProblemProps> = ({
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={answered}
+            disabled={answered && isCorrect}
             className={cn(
               "glass-input w-full py-3 px-4 rounded-lg text-center text-xl transition-all duration-300",
               answered && (isCorrect 
@@ -123,12 +144,19 @@ const MathProblem: React.FC<MathProblemProps> = ({
                   Correct answer: <span className="text-foreground">{problem.answer}</span>
                 </div>
               )}
-              <Button 
-                onClick={handleNext}
-                className="mx-auto min-w-32"
-              >
-                Next Problem
-              </Button>
+              {isCorrect && (
+                <div className="text-center text-sm text-muted-foreground">
+                  Moving to next problem...
+                </div>
+              )}
+              {!isCorrect && (
+                <Button 
+                  onClick={handleNext}
+                  className="mx-auto min-w-32"
+                >
+                  Skip to Next Problem
+                </Button>
+              )}
             </div>
           )}
         </div>
