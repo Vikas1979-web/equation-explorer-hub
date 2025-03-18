@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { MathProblem as MathProblemType, Difficulty, Operation, checkAnswer } from '@/utils/mathUtils';
 import Button from './Button';
@@ -40,7 +41,7 @@ const MathProblem: React.FC<MathProblemProps> = ({
     if (answered && isCorrect) {
       const timer = setTimeout(() => {
         onNextProblem();
-      }, 800); // Short delay before moving to next problem
+      }, 300); // Reduced from 800ms to 300ms for faster transition
       
       return () => clearTimeout(timer);
     }
@@ -67,7 +68,7 @@ const MathProblem: React.FC<MathProblemProps> = ({
         if (inputRef.current) {
           inputRef.current.focus();
         }
-      }, 1500); // Short delay to show feedback before allowing retry
+      }, 800); // Keeping this at 800ms to give enough time to see the incorrect feedback
     }
   };
 
