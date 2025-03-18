@@ -47,9 +47,48 @@ const MathProblem: React.FC<MathProblemProps> = ({
     }
   }, [answered, isCorrect, onNextProblem]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Effect to check the answer as user types
+  useEffect(() => {
+    if (!userAnswer || answered) return;
     
+    const userNumAnswer = parseFloat(userAnswer);
+    // Only check if the input is a valid number
+    if (!isNaN(userNumAnswer)) {
+      const isAnswerCorrect = checkAnswer(userNumAnswer, problem.answer, problem.difficulty);
+      
+      if (isAnswerCorrect) {
+        const elapsedTime = (Date.now() - startTime) / 1000;
+        setIsCorrect(true);
+        setAnswered(true);
+        onAnswer(true, elapsedTime);
+      }
+    }
+  }, [userAnswer, problem.answer, problem.difficulty, answered, onAnswer, startTime]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUserAnswer(value);
+  };
+
+  const handleNext = () => {
+    onNextProblem();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // When Enter is pressed and the problem is already answered, go to next problem
+    if (e.key === 'Enter' && answered && isCorrect) {
+      e.preventDefault();
+      handleNext();
+    }
+    
+    // Allow manual checking with Enter if answer is not yet correct
+    if (e.key === 'Enter' && !answered && userAnswer) {
+      e.preventDefault();
+      checkManually();
+    }
+  };
+
+  const checkManually = () => {
     if (answered || !userAnswer) return;
     
     const userNumAnswer = parseFloat(userAnswer);
@@ -72,25 +111,13 @@ const MathProblem: React.FC<MathProblemProps> = ({
     }
   };
 
-  const handleNext = () => {
-    onNextProblem();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // When Enter is pressed and the problem is already answered, go to next problem
-    if (e.key === 'Enter' && answered && isCorrect) {
-      e.preventDefault();
-      handleNext();
-    }
-  };
-
   return (
     <div className={cn(
       "problem-card p-6 animate-in transition-all duration-300",
       answered ? (isCorrect ? "border-2 border-green-200" : "border-2 border-red-200") : "",
       className
     )}>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6">
         <div className="text-center">
           <div className="inline-block px-3 py-1 mb-4 text-xs font-medium rounded-full bg-primary/10 text-primary">
             {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
@@ -106,7 +133,7 @@ const MathProblem: React.FC<MathProblemProps> = ({
             type="number"
             step="any"
             value={userAnswer}
-            onChange={(e) => setUserAnswer(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             disabled={answered && isCorrect}
             className={cn(
@@ -132,7 +159,8 @@ const MathProblem: React.FC<MathProblemProps> = ({
         <div className="flex justify-center">
           {!answered ? (
             <Button 
-              type="submit"
+              type="button"
+              onClick={checkManually}
               disabled={!userAnswer}
               className="min-w-32"
             >
@@ -161,7 +189,7 @@ const MathProblem: React.FC<MathProblemProps> = ({
             </div>
           )}
         </div>
-      </form>
+      </div>
     </div>
   );
 };
