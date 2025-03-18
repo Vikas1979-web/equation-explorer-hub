@@ -23,6 +23,13 @@ const MathProblem: React.FC<MathProblemProps> = ({
   const [startTime, setStartTime] = useState<number>(Date.now());
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Focus the input when the component mounts
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
   useEffect(() => {
     // Reset when problem changes
     setUserAnswer('');
@@ -30,10 +37,12 @@ const MathProblem: React.FC<MathProblemProps> = ({
     setIsCorrect(null);
     setStartTime(Date.now());
     
-    // Focus the input field
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    // Focus the input field with a slight delay to ensure it works
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 10);
   }, [problem]);
 
   // Effect to automatically move to next problem if answer is correct
