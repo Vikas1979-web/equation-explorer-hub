@@ -53,7 +53,7 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({ isLoggedIn, onLogin, onLogout
           onClick={onLogin}
         >
           <LogIn className="w-4 h-4" />
-          <span>Sign in with Google</span>
+          <span>Sign in</span>
         </Button>
       )}
     </div>
