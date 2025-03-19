@@ -1,24 +1,12 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AuthButtons from './AuthButtons';
-import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, signOut } = useAuth();
   const location = useLocation();
-  
-  const handleLogin = () => {
-    // Mock login for now
-    setIsLoggedIn(true);
-    toast.success('Successfully signed in with Google');
-  };
-  
-  const handleLogout = () => {
-    // Mock logout for now
-    setIsLoggedIn(false);
-    toast.info('You have been logged out');
-  };
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -37,9 +25,9 @@ const Navbar: React.FC = () => {
           <Link to="/" className={`navbar-item ${isActive('/') ? 'text-primary font-medium' : ''}`}>Practice</Link>
           <Link to="/leaderboard" className={`navbar-item ${isActive('/leaderboard') ? 'text-primary font-medium' : ''}`}>Leaderboard</Link>
           <AuthButtons 
-            isLoggedIn={isLoggedIn}
-            onLogin={handleLogin}
-            onLogout={handleLogout}
+            isLoggedIn={!!user}
+            onLogin={() => window.location.href = '/auth'}
+            onLogout={signOut}
           />
         </div>
       </div>

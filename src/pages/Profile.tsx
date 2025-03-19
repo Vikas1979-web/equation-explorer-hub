@@ -1,34 +1,53 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { User, Clock, BarChart2, Activity } from 'lucide-react';
-
-// Mock data for now - would be replaced with real data from backend
-const mockUserData = {
-  name: 'Alex Johnson',
-  email: 'alex.johnson@example.com',
-  joined: '2023-06-15',
-  stats: {
-    totalProblems: 248,
-    correctAnswers: 201,
-    accuracy: 81,
-    avgTime: 2.3,
-    bestTime: 0.9,
-    practiceStreak: 5,
-    lastPractice: '2023-07-01'
-  },
-  history: [
-    { date: '2023-06-30', problems: 20, correct: 18, accuracy: 90, avgTime: 2.1 },
-    { date: '2023-06-29', problems: 15, correct: 12, accuracy: 80, avgTime: 2.2 },
-    { date: '2023-06-28', problems: 25, correct: 20, accuracy: 80, avgTime: 2.3 },
-    { date: '2023-06-27', problems: 18, correct: 14, accuracy: 78, avgTime: 2.4 },
-    { date: '2023-06-26', problems: 22, correct: 19, accuracy: 86, avgTime: 2.2 }
-  ]
-};
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const Profile = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Mock data for now - would be replaced with real data from backend
+  const mockUserData = {
+    name: user?.email?.split('@')[0] || 'User',
+    email: user?.email || 'No email',
+    joined: new Date().toISOString().split('T')[0],
+    stats: {
+      totalProblems: 248,
+      correctAnswers: 201,
+      accuracy: 81,
+      avgTime: 2.3,
+      bestTime: 0.9,
+      practiceStreak: 5,
+      lastPractice: new Date().toISOString().split('T')[0]
+    },
+    history: [
+      { date: '2023-06-30', problems: 20, correct: 18, accuracy: 90, avgTime: 2.1 },
+      { date: '2023-06-29', problems: 15, correct: 12, accuracy: 80, avgTime: 2.2 },
+      { date: '2023-06-28', problems: 25, correct: 20, accuracy: 80, avgTime: 2.3 },
+      { date: '2023-06-27', problems: 18, correct: 14, accuracy: 78, avgTime: 2.4 },
+      { date: '2023-06-26', problems: 22, correct: 19, accuracy: 86, avgTime: 2.2 }
+    ]
+  };
+
+  useEffect(() => {
+    // If not loading and no user, redirect to auth page
+    if (!loading && !user) {
+      toast.info('Please sign in to view your profile');
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  // Show loading or redirect if not authenticated
+  if (loading || !user) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
