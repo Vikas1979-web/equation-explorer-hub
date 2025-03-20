@@ -43,8 +43,7 @@ const Profile = () => {
           throw profileError;
         }
 
-        // For now, we're using placeholder data for statistics and history
-        // In a real app, you would fetch this from related tables in your database
+        // Set blank data for statistics and history
         const userDataWithStats = {
           ...profileData,
           name: profileData.username || user.email?.split('@')[0] || 'User',
@@ -57,7 +56,7 @@ const Profile = () => {
             avgTime: 0,
             bestTime: 0,
             practiceStreak: 0,
-            lastPractice: new Date().toISOString().split('T')[0]
+            lastPractice: null
           },
           history: []
         };
@@ -144,9 +143,9 @@ const Profile = () => {
                       <Activity className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Accuracy</span>
                     </div>
-                    <div className="text-2xl font-semibold">{userData.stats.accuracy}%</div>
+                    <div className="text-2xl font-semibold">0%</div>
                     <div className="text-xs text-muted-foreground">
-                      {userData.stats.correctAnswers} correct out of {userData.stats.totalProblems}
+                      0 correct out of 0
                     </div>
                   </div>
                   
@@ -155,9 +154,9 @@ const Profile = () => {
                       <Clock className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Average Time</span>
                     </div>
-                    <div className="text-2xl font-semibold">{userData.stats.avgTime}s</div>
+                    <div className="text-2xl font-semibold">-</div>
                     <div className="text-xs text-muted-foreground">
-                      Best time: {userData.stats.bestTime}s
+                      Best time: -
                     </div>
                   </div>
                   
@@ -166,9 +165,9 @@ const Profile = () => {
                       <BarChart2 className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Practice Streak</span>
                     </div>
-                    <div className="text-2xl font-semibold">{userData.stats.practiceStreak} days</div>
+                    <div className="text-2xl font-semibold">0 days</div>
                     <div className="text-xs text-muted-foreground">
-                      Last practice: {new Date(userData.stats.lastPractice).toLocaleDateString()}
+                      No practice sessions yet
                     </div>
                   </div>
                 </div>
@@ -176,42 +175,12 @@ const Profile = () => {
             </div>
           </div>
           
-          {userData.history && userData.history.length > 0 ? (
-            <div className="bg-white border border-border/60 rounded-xl p-6 shadow-sm mb-6">
-              <h3 className="text-lg font-semibold mb-4">Recent Practice Sessions</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left pb-2">Date</th>
-                      <th className="text-right pb-2">Problems</th>
-                      <th className="text-right pb-2">Correct</th>
-                      <th className="text-right pb-2">Accuracy</th>
-                      <th className="text-right pb-2">Avg Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {userData.history.map((session: any, index: number) => (
-                      <tr key={index} className="border-b last:border-0">
-                        <td className="py-3">{new Date(session.date).toLocaleDateString()}</td>
-                        <td className="text-right py-3">{session.problems}</td>
-                        <td className="text-right py-3">{session.correct}</td>
-                        <td className="text-right py-3">{session.accuracy}%</td>
-                        <td className="text-right py-3">{session.avgTime}s</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white border border-border/60 rounded-xl p-6 shadow-sm mb-6 text-center">
-              <h3 className="text-lg font-semibold mb-4">Recent Practice Sessions</h3>
-              <p className="text-muted-foreground py-6">
-                You haven't completed any practice sessions yet.
-              </p>
-            </div>
-          )}
+          <div className="bg-white border border-border/60 rounded-xl p-6 shadow-sm mb-6 text-center">
+            <h3 className="text-lg font-semibold mb-4">Recent Practice Sessions</h3>
+            <p className="text-muted-foreground py-6">
+              You haven't completed any practice sessions yet.
+            </p>
+          </div>
           
           <div className="flex justify-center">
             <Button className="min-w-40" onClick={() => navigate('/practice')}>
