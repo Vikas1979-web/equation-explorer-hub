@@ -15,6 +15,16 @@ const Profile = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [practiceHistory, setPracticeHistory] = useState([]);
+  const [stats, setStats] = useState({
+    totalProblems: 0,
+    correctAnswers: 0,
+    accuracy: 0,
+    avgTime: 0,
+    bestTime: 0,
+    practiceStreak: 0,
+    lastPractice: null
+  });
 
   useEffect(() => {
     // If not loading and no user, redirect to auth page
@@ -42,23 +52,60 @@ const Profile = () => {
           console.error('Error fetching profile:', profileError);
           throw profileError;
         }
+        
+        // Try to fetch practice sessions if the table exists
+        let practiceSessionsData = [];
+        let practiceStats = { ...stats };
+        
+        try {
+          // Fetch practice sessions
+          const { data: sessionsData, error: sessionsError } = await supabase
+            .from('practice_sessions')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(10);
+            
+          if (!sessionsError && sessionsData) {
+            practiceSessionsData = sessionsData;
+            
+            // Calculate stats from sessions
+            if (sessionsData.length > 0) {
+              const totalProblems = sessionsData.reduce((sum, session) => sum + session.total_problems, 0);
+              const correctAnswers = sessionsData.reduce((sum, session) => sum + session.correct_answers, 0);
+              const totalTime = sessionsData.reduce((sum, session) => sum + session.total_time, 0);
+              
+              practiceStats = {
+                totalProblems,
+                correctAnswers,
+                accuracy: totalProblems > 0 ? Math.round((correctAnswers / totalProblems) * 100) : 0,
+                avgTime: totalProblems > 0 ? totalTime / totalProblems : 0,
+                bestTime: Math.min(...sessionsData.map(s => s.average_time || Infinity)),
+                practiceStreak: profileData.practice_streak || 0,
+                lastPractice: profileData.last_practice_date
+              };
+              
+              // Fix infinity if no valid times
+              if (practiceStats.bestTime === Infinity) {
+                practiceStats.bestTime = 0;
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('Error fetching practice data:', error);
+          // This is expected if tables don't exist yet, so we'll just use default values
+        }
+        
+        // Set stats
+        setStats(practiceStats);
+        setPracticeHistory(practiceSessionsData);
 
-        // Set blank data for statistics and history
+        // Setup user data with profile information
         const userDataWithStats = {
           ...profileData,
           name: profileData.username || user.email?.split('@')[0] || 'User',
           email: user.email || 'No email',
           joined: user.created_at ? new Date(user.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          stats: {
-            totalProblems: 0,
-            correctAnswers: 0,
-            accuracy: 0,
-            avgTime: 0,
-            bestTime: 0,
-            practiceStreak: 0,
-            lastPractice: null
-          },
-          history: []
         };
         
         setUserData(userDataWithStats);
@@ -73,7 +120,7 @@ const Profile = () => {
     if (user) {
       fetchUserProfile();
     }
-  }, [user]);
+  }, [user, stats]);
 
   // Show loading state
   if (loading || isLoading) {
@@ -143,9 +190,9 @@ const Profile = () => {
                       <Activity className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Accuracy</span>
                     </div>
-                    <div className="text-2xl font-semibold">0%</div>
+                    <div className="text-2xl font-semibold">{stats.accuracy}%</div>
                     <div className="text-xs text-muted-foreground">
-                      0 correct out of 0
+                      {stats.correctAnswers} correct out of {stats.totalProblems}
                     </div>
                   </div>
                   
@@ -154,9 +201,11 @@ const Profile = () => {
                       <Clock className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Average Time</span>
                     </div>
-                    <div className="text-2xl font-semibold">-</div>
+                    <div className="text-2xl font-semibold">
+                      {stats.avgTime > 0 ? `${stats.avgTime.toFixed(1)}s` : '-'}
+                    </div>
                     <div className="text-xs text-muted-foreground">
-                      Best time: -
+                      Best time: {stats.bestTime > 0 ? `${stats.bestTime.toFixed(1)}s` : '-'}
                     </div>
                   </div>
                   
@@ -165,9 +214,11 @@ const Profile = () => {
                       <BarChart2 className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Practice Streak</span>
                     </div>
-                    <div className="text-2xl font-semibold">0 days</div>
+                    <div className="text-2xl font-semibold">{stats.practiceStreak || 0} days</div>
                     <div className="text-xs text-muted-foreground">
-                      No practice sessions yet
+                      {stats.lastPractice 
+                        ? `Last practice: ${new Date(stats.lastPractice).toLocaleDateString()}`
+                        : 'No practice sessions yet'}
                     </div>
                   </div>
                 </div>
@@ -175,11 +226,42 @@ const Profile = () => {
             </div>
           </div>
           
-          <div className="bg-white border border-border/60 rounded-xl p-6 shadow-sm mb-6 text-center">
+          <div className="bg-white border border-border/60 rounded-xl p-6 shadow-sm mb-6">
             <h3 className="text-lg font-semibold mb-4">Recent Practice Sessions</h3>
-            <p className="text-muted-foreground py-6">
-              You haven't completed any practice sessions yet.
-            </p>
+            
+            {practiceHistory && practiceHistory.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="pb-2 font-medium">Date</th>
+                      <th className="pb-2 font-medium">Difficulty</th>
+                      <th className="pb-2 font-medium text-right">Score</th>
+                      <th className="pb-2 font-medium text-right">Avg Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {practiceHistory.map((session: any, index: number) => (
+                      <tr key={index} className="border-b last:border-0">
+                        <td className="py-3">{new Date(session.created_at).toLocaleDateString()}</td>
+                        <td className="py-3 capitalize">{session.difficulty}</td>
+                        <td className="py-3 text-right">
+                          {session.correct_answers}/{session.total_problems}
+                          <span className="text-muted-foreground ml-1 text-sm">
+                            ({Math.round((session.correct_answers / session.total_problems) * 100)}%)
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">{session.average_time.toFixed(1)}s</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-muted-foreground py-6 text-center">
+                You haven't completed any practice sessions yet.
+              </p>
+            )}
           </div>
           
           <div className="flex justify-center">
