@@ -1,39 +1,20 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { User, Clock, BarChart2, Activity } from 'lucide-react';
+import { User, Clock, BarChart2, Activity, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Profile = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-
-  // Mock data for now - would be replaced with real data from backend
-  const mockUserData = {
-    name: user?.email?.split('@')[0] || 'User',
-    email: user?.email || 'No email',
-    joined: new Date().toISOString().split('T')[0],
-    stats: {
-      totalProblems: 248,
-      correctAnswers: 201,
-      accuracy: 81,
-      avgTime: 2.3,
-      bestTime: 0.9,
-      practiceStreak: 5,
-      lastPractice: new Date().toISOString().split('T')[0]
-    },
-    history: [
-      { date: '2023-06-30', problems: 20, correct: 18, accuracy: 90, avgTime: 2.1 },
-      { date: '2023-06-29', problems: 15, correct: 12, accuracy: 80, avgTime: 2.2 },
-      { date: '2023-06-28', problems: 25, correct: 20, accuracy: 80, avgTime: 2.3 },
-      { date: '2023-06-27', problems: 18, correct: 14, accuracy: 78, avgTime: 2.4 },
-      { date: '2023-06-26', problems: 22, correct: 19, accuracy: 86, avgTime: 2.2 }
-    ]
-  };
+  const [userData, setUserData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // If not loading and no user, redirect to auth page
@@ -43,9 +24,77 @@ const Profile = () => {
     }
   }, [user, loading, navigate]);
 
-  // Show loading or redirect if not authenticated
-  if (loading || !user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Fetch user profile from profiles table
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          throw profileError;
+        }
+
+        // For now, we're using placeholder data for statistics and history
+        // In a real app, you would fetch this from related tables in your database
+        const userDataWithStats = {
+          ...profileData,
+          name: profileData.username || user.email?.split('@')[0] || 'User',
+          email: user.email || 'No email',
+          joined: user.created_at ? new Date(user.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          stats: {
+            totalProblems: 0,
+            correctAnswers: 0,
+            accuracy: 0,
+            avgTime: 0,
+            bestTime: 0,
+            practiceStreak: 0,
+            lastPractice: new Date().toISOString().split('T')[0]
+          },
+          history: []
+        };
+        
+        setUserData(userDataWithStats);
+      } catch (error) {
+        toast.error('Failed to load profile data');
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  // Show loading state
+  if (loading || isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="mt-2 text-muted-foreground">Loading profile...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show nothing if not authenticated (will redirect)
+  if (!user || !userData) {
+    return null;
   }
 
   return (
@@ -68,13 +117,16 @@ const Profile = () => {
             <div className="md:col-span-1">
               <div className="bg-white border border-border/60 rounded-xl p-6 shadow-sm">
                 <div className="flex flex-col items-center">
-                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <User className="w-10 h-10 text-primary" />
-                  </div>
-                  <h2 className="text-xl font-semibold">{mockUserData.name}</h2>
-                  <p className="text-muted-foreground">{mockUserData.email}</p>
+                  <Avatar className="w-20 h-20 mb-4">
+                    <AvatarImage src={userData.avatar_url} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                      {userData.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h2 className="text-xl font-semibold">{userData.name}</h2>
+                  <p className="text-muted-foreground">{userData.email}</p>
                   <div className="text-sm text-muted-foreground mt-2">
-                    Member since {new Date(mockUserData.joined).toLocaleDateString()}
+                    Member since {new Date(userData.joined).toLocaleDateString()}
                   </div>
                   <Button variant="outline" className="mt-4 w-full">
                     Edit Profile
@@ -92,9 +144,9 @@ const Profile = () => {
                       <Activity className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Accuracy</span>
                     </div>
-                    <div className="text-2xl font-semibold">{mockUserData.stats.accuracy}%</div>
+                    <div className="text-2xl font-semibold">{userData.stats.accuracy}%</div>
                     <div className="text-xs text-muted-foreground">
-                      {mockUserData.stats.correctAnswers} correct out of {mockUserData.stats.totalProblems}
+                      {userData.stats.correctAnswers} correct out of {userData.stats.totalProblems}
                     </div>
                   </div>
                   
@@ -103,9 +155,9 @@ const Profile = () => {
                       <Clock className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Average Time</span>
                     </div>
-                    <div className="text-2xl font-semibold">{mockUserData.stats.avgTime}s</div>
+                    <div className="text-2xl font-semibold">{userData.stats.avgTime}s</div>
                     <div className="text-xs text-muted-foreground">
-                      Best time: {mockUserData.stats.bestTime}s
+                      Best time: {userData.stats.bestTime}s
                     </div>
                   </div>
                   
@@ -114,9 +166,9 @@ const Profile = () => {
                       <BarChart2 className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">Practice Streak</span>
                     </div>
-                    <div className="text-2xl font-semibold">{mockUserData.stats.practiceStreak} days</div>
+                    <div className="text-2xl font-semibold">{userData.stats.practiceStreak} days</div>
                     <div className="text-xs text-muted-foreground">
-                      Last practice: {new Date(mockUserData.stats.lastPractice).toLocaleDateString()}
+                      Last practice: {new Date(userData.stats.lastPractice).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -124,36 +176,45 @@ const Profile = () => {
             </div>
           </div>
           
-          <div className="bg-white border border-border/60 rounded-xl p-6 shadow-sm mb-6">
-            <h3 className="text-lg font-semibold mb-4">Recent Practice Sessions</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left pb-2">Date</th>
-                    <th className="text-right pb-2">Problems</th>
-                    <th className="text-right pb-2">Correct</th>
-                    <th className="text-right pb-2">Accuracy</th>
-                    <th className="text-right pb-2">Avg Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockUserData.history.map((session, index) => (
-                    <tr key={index} className="border-b last:border-0">
-                      <td className="py-3">{new Date(session.date).toLocaleDateString()}</td>
-                      <td className="text-right py-3">{session.problems}</td>
-                      <td className="text-right py-3">{session.correct}</td>
-                      <td className="text-right py-3">{session.accuracy}%</td>
-                      <td className="text-right py-3">{session.avgTime}s</td>
+          {userData.history && userData.history.length > 0 ? (
+            <div className="bg-white border border-border/60 rounded-xl p-6 shadow-sm mb-6">
+              <h3 className="text-lg font-semibold mb-4">Recent Practice Sessions</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left pb-2">Date</th>
+                      <th className="text-right pb-2">Problems</th>
+                      <th className="text-right pb-2">Correct</th>
+                      <th className="text-right pb-2">Accuracy</th>
+                      <th className="text-right pb-2">Avg Time</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {userData.history.map((session: any, index: number) => (
+                      <tr key={index} className="border-b last:border-0">
+                        <td className="py-3">{new Date(session.date).toLocaleDateString()}</td>
+                        <td className="text-right py-3">{session.problems}</td>
+                        <td className="text-right py-3">{session.correct}</td>
+                        <td className="text-right py-3">{session.accuracy}%</td>
+                        <td className="text-right py-3">{session.avgTime}s</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white border border-border/60 rounded-xl p-6 shadow-sm mb-6 text-center">
+              <h3 className="text-lg font-semibold mb-4">Recent Practice Sessions</h3>
+              <p className="text-muted-foreground py-6">
+                You haven't completed any practice sessions yet.
+              </p>
+            </div>
+          )}
           
           <div className="flex justify-center">
-            <Button className="min-w-40">
+            <Button className="min-w-40" onClick={() => navigate('/practice')}>
               Start New Practice
             </Button>
           </div>
