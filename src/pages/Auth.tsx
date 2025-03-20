@@ -58,7 +58,8 @@ const Auth: React.FC = () => {
         navigate('/profile');
       } else {
         await signUp(email, password);
-        setIsSignIn(true);
+        // Don't navigate away after signup - show a success message instead
+        // and let the user log in (as they might need to verify email depending on settings)
       }
     } catch (err: any) {
       console.error('Auth error:', err);
