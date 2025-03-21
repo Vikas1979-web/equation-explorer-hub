@@ -13,6 +13,10 @@ type AuthButtonsProps = {
 const AuthButtons: React.FC<AuthButtonsProps> = ({ isLoggedIn, onLogin, onLogout }) => {
   const navigate = useNavigate();
 
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
   return (
     <div className="flex items-center gap-2">
       {isLoggedIn ? (
@@ -21,7 +25,7 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({ isLoggedIn, onLogin, onLogout
             variant="ghost"
             size="sm"
             className="gap-2"
-            onClick={() => navigate('/profile')}
+            onClick={handleProfileClick}
           >
             <User className="w-4 h-4" />
             <span className="hidden sm:inline">Profile</span>
