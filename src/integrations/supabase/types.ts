@@ -9,22 +9,97 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      practice_results: {
+        Row: {
+          answer: string
+          created_at: string
+          difficulty: string
+          id: string
+          is_correct: boolean
+          problem: string
+          time_taken: number
+          user_answer: string | null
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          difficulty: string
+          id?: string
+          is_correct: boolean
+          problem: string
+          time_taken: number
+          user_answer?: string | null
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          is_correct?: boolean
+          problem?: string
+          time_taken?: number
+          user_answer?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      practice_sessions: {
+        Row: {
+          average_time: number
+          correct_answers: number
+          created_at: string
+          difficulty: string
+          id: string
+          total_problems: number
+          total_time: number
+          user_id: string
+        }
+        Insert: {
+          average_time: number
+          correct_answers: number
+          created_at?: string
+          difficulty: string
+          id?: string
+          total_problems: number
+          total_time: number
+          user_id: string
+        }
+        Update: {
+          average_time?: number
+          correct_answers?: number
+          created_at?: string
+          difficulty?: string
+          id?: string
+          total_problems?: number
+          total_time?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           id: string
+          last_practice_date: string | null
+          practice_streak: number | null
           updated_at: string
           username: string | null
         }
         Insert: {
           created_at?: string
           id: string
+          last_practice_date?: string | null
+          practice_streak?: number | null
           updated_at?: string
           username?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          last_practice_date?: string | null
+          practice_streak?: number | null
           updated_at?: string
           username?: string | null
         }
