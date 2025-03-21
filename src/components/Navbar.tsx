@@ -1,15 +1,20 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AuthButtons from './AuthButtons';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar: React.FC = () => {
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleLogin = () => {
+    navigate('/auth');
   };
 
   return (
@@ -26,7 +31,7 @@ const Navbar: React.FC = () => {
           <Link to="/leaderboard" className={`navbar-item ${isActive('/leaderboard') ? 'text-primary font-medium' : ''}`}>Leaderboard</Link>
           <AuthButtons 
             isLoggedIn={!!user}
-            onLogin={() => window.location.href = '/auth'}
+            onLogin={handleLogin}
             onLogout={signOut}
           />
         </div>

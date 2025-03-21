@@ -14,7 +14,8 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({ isLoggedIn, onLogin, onLogout
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    // Force navigation to profile page with full URL
+    window.location.href = '/profile';
   };
 
   return (
