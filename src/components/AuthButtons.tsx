@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, LogOut, User, Award } from 'lucide-react';
+import { LogIn, LogOut, User } from 'lucide-react';
 
 type AuthButtonsProps = {
   isLoggedIn: boolean;
@@ -17,15 +17,6 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({ isLoggedIn, onLogin, onLogout
     <div className="flex items-center gap-2">
       {isLoggedIn ? (
         <>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => navigate('/leaderboard')}
-          >
-            <Award className="w-4 h-4" />
-            <span className="hidden sm:inline">Leaderboard</span>
-          </Button>
           <Button
             variant="ghost"
             size="sm"
